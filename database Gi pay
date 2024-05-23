@@ -1,0 +1,39 @@
+CREATE DATABASE IF NOT EXISTS e_money;
+
+USE e_money;
+
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    full_name VARCHAR(100) NOT NULL,
+    phone_number VARCHAR(15) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    balance DECIMAL(10, 2));
+
+CREATE TABLE IF NOT EXISTS merchants (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    full_name VARCHAR(100) NOT NULL,
+    store_name VARCHAR(100) NOT NULL,
+    store_address VARCHAR(255) NOT NULL,
+    phone_number VARCHAR(15) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    balance DECIMAL(10, 2));
+
+CREATE TABLE IF NOT EXISTS transactions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    merchant_id INT,
+    amount DECIMAL(10, 2) NOT NULL,
+    date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (merchant_id) REFERENCES merchants(id)
+);
+
+CREATE TABLE IF NOT EXISTS virtual_accounts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    balance DECIMAL(10, 2) DEFAULT 0,
+    FOREIGN KEY (user_id));
