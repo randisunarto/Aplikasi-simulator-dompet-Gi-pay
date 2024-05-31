@@ -10,6 +10,7 @@ Welcome to the Gi-Pay Wallet Simulator repository, the final project for our Dat
 - **Syahriza**
 - **Sabtina Arinda Inaya**
 - **Raihan Taqwa**
+- **Labib Musyari**
 
 ## Project Objectives
 
