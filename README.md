@@ -2,7 +2,7 @@
 ## Final Project: Database and Database Systems
 
 **Overview**
-Welcome to the Gi-Pay Wallet Simulator repository, the final project for our Database and Database Systems course. Our project, crafted by a team of five dedicated students, aims to design and implement a comprehensive e-wallet application. The Gi-Pay Wallet Simulator encompasses features for public users, store owners (merchants), and administrators, ensuring a robust and versatile digital payment solution.
+Welcome to the Gi-Pay Wallet Simulator repository, the final project for our Database and Database Systems course. Our project, crafted by a team of six dedicated students from Mechatronics and Artificial Intelligence major, aims to design and implement a comprehensive e-wallet application. The Gi-Pay Wallet Simulator encompasses features for public users, store owners (merchants), and administrators, ensuring a robust and versatile digital payment solution.
 
 ## Team Members
 - **Randi Sunarto**
