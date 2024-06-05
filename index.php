@@ -1,39 +1,12 @@
-
 <?php
 require_once 'functions.php';
 
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // Register user
-    if (isset($_POST['register_user'])) {
+    // Register user    
         addUserToDatabase($_POST['username'], $_POST['password'], $_POST['full_name'], $_POST['phone_number'], $_POST['email']);
     }
 
-    // Register merchant
-    if (isset($_POST['register_merchant'])) {
-        addMerchantToDatabase($_POST['username'], $_POST['password'], $_POST['full_name'], $_POST['store_name'], $_POST['store_address'], $_POST['phone_number'], $_POST['email']);
-    }
-
-    // Update balance
-    if (isset($_POST['update_balance'])) {
-        updateUserBalance($_POST['user_id'], $_POST['amount']);
-    }
-
-    // Transfer funds
-    if (isset($_POST['transfer_funds'])) {
-        transferToBankAccount($_POST['bank_account_data'], $_POST['amount']);
-    }
-
-    // Update user status
-    if (isset($_POST['update_status'])) {
-        updateUserStatus($_POST['user_id'], $_POST['status']);
-    }
-
-    // Update merchant status
-    if (isset($_POST['update_merchant_status'])) {
-        updateMerchantStatus($_POST['merchant_id'], $_POST['status']);
-    }
-}
 ?>
 
 <!DOCTYPE html>
@@ -45,30 +18,28 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-   <div id="login-box">
-  <div class="left">
-    <h1>Sign up User</h1>
-    
-    <input type="text" name="username" placeholder="Username" />
-     <input type="text" name="Password" placeholder="password" />
-    <input type="text" name="Full Name" placeholder="Full Name" />
-    <input type="password" name="Phone Number" placeholder="Phone Number" />
-    <input type="password" name="Email" placeholder="Email" />
-    
-    <input type="submit" name="signup_submit" value="Sign me up" />
-  </div>
-  
-  <div class="right">
-    <span class="loginwith">Sign in with<br />social network</span>
-    
-    <form>
-    <button class="social-signin facebook" formaction="sign-inuser.php">Sign In User</button>
-    <button class="social-signin twitter" formaction="admin.php">Admin</button>
-    <button class="social-signin google" formaction="merchan.php">Sign up Merchant</button>
-  </form>
+    <div id="login-box">
+        <div class="left">
+            <h1>Sign up User</h1>
+            <form action="index.php" method="POST">
+                <input type="text" name="username" placeholder="Username" required />
+                <input type="password" name="password" placeholder="Password" required />
+                <input type="text" name="full_name" placeholder="Full Name" required />
+                <input type="text" name="phone_number" placeholder="Phone Number" required />
+                <input type="text" name="email" placeholder="Email" required />
+                <input type="submit" name="signup_submit" value="Sign me up" formaction="sign-inuser.php" />
+            </form>
+        </div>
 
-  </div>
-  <div class="or">OR</div>
-</div>
+        <div class="right">
+            <span class="loginwith">Sign in with<br />social network</span>
+            <form>
+                <button class="social-signin facebook" formaction="sign-inuser.php">Sign In User</button>
+                <button class="social-signin twitter" formaction="admin.php">Admin</button>
+                <button class="social-signin google" formaction="merchant.php">Sign up Merchant</button>
+            </form>
+        </div>
+        <div class="or">OR</div>
+    </div>
 </body>
 </html>
