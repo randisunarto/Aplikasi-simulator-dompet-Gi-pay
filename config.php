@@ -1,15 +1,33 @@
 <?php
+$servername = "localhost";  // Usually 'localhost' if you are running on the same server
+$username = "root";  // Replace with your database username
+$password = "";  // Replace with your database password
+$dbname = "e_money";  // Replace with your database name
 
-$db_host = 'localhost';
-$db_username = 'root';
-$db_password = '';
-$db_name = 'e_money';
+// Create connection
+$conn = new mysqli($servername, $username, $password, $dbname);
 
 
-$conn = new mysqli($db_host, $db_username, $db_password, $db_name);
-
-
-if ($conn->connect_error) {
-    die("Connection failed: ". $conn->connect_error);
+function getPDOConnection($host, $dbname, $username, $password) {
+    try {
+        $dsn = "mysql:host=$host;dbname=$dbname;charset=utf8mb4";
+        $pdo = new PDO($dsn, $username, $password);
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        return $pdo;
+    } catch (PDOException $e) {
+        die('Connection failed: ' . $e->getMessage());
+    }
 }
 ?>
+
+
+<?php
+try {
+    $pdo = new PDO('mysql:host=localhost;dbname=e_money', 'root', '');
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+    echo 'Connection failed: ' . $e->getMessage();
+    exit;
+}
+?>
+
