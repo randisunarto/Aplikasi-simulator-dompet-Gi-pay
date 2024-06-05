@@ -1,132 +1,286 @@
-<?php
-session_start();
-include 'config.php';
 
-if (!isset($_SESSION['email'])) {
-    header('Location: signinmer.php');
-    exit;
+body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f0f0f0;
 }
 
-// Ambil data merchant dari database berdasarkan email
-$email = $_SESSION['email'];
-$query = $pdo->prepare("SELECT full_name, store_name, id, balance FROM merchants WHERE email = :email");
-$query->execute(['email' => $email]);
-$merchant = $query->fetch();
-
-if (!$merchant) {
-    // Jika data merchant tidak ditemukan
-    echo "Merchant tidak ditemukan.";
-    exit;
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #004d40;
+    color: white;
+    padding: 10px 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
-?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Dashboard Toko</title>
-    <link rel="stylesheet" href="dashm.css">
-    <!-- Tambahkan elemen head lainnya di sini -->
-</head>
-<body>
-    <nav class="navbar">
-        <!-- Konten navbar di sini -->
-    </nav>
-    <main class="main-content">
-        <section id="profile" class="profile-section">
-            <h2>Profil Toko</h2>
-            <p>Nama: <?php echo htmlspecialchars($merchant['store_name']); ?></p>
-            <p>ID Toko: <?php echo htmlspecialchars($merchant['id']); ?></p>
-            <div class="saldo-section">
-                <h3>Saldo Toko: Rp. <?php echo number_format($merchant['balance'], 2, ',', '.'); ?></h3>
-                <button id="tarik-saldo-btn">Tarik Saldo</button>
-            </div>
-        </section>
-        <section id="transaksi" class="transaksi-section">
-            <h2>Statistik Transaksi</h2>
-            <div class="date-filter">
-                <label for="start-date">Dari Tanggal:</label>
-                <input type="date" id="start-date">
-                <label for="end-date">Sampai Tanggal:</label>
-                <input type="date" id="end-date">
-                <button id="filter-btn">Filter</button>
-            </div>
-            <div class="statistik-container">
-                <!-- Bagian Statistik Pembayaran Harian -->
-<div id="transaksi_pembayaran">
-    <h3>Transaksi Pembayaran Harian</h3>
-    <canvas id="paymentChart"></canvas>
-    <ul>
-        <?php if(isset($transaksi_pembayaran)): ?>
-            <?php foreach ($transaksi_pembayaran as $transaksi): ?>
-                <li><?php echo $transaksi['keterangan']; ?> - <?php echo $transaksi['jumlah']; ?></li>
-            <?php endforeach; ?>
-        <?php else: ?>
-            <li>Tidak ada data transaksi pembayaran harian.</li>
-        <?php endif; ?>
-    </ul>
-</div>
+.navbar .logo {
+    height: 40px;
+}
 
-<!-- Bagian Statistik Penarikan Harian -->
-<div id="transaksi_penarikan">
-    <h3>Transaksi Penarikan Harian</h3>
-    <canvas id="withdrawalChart"></canvas>
-    <ul>
-        <?php if(isset($transaksi_penarikan)): ?>
-            <?php foreach ($transaksi_penarikan as $transaksi): ?>
-                <li><?php echo $transaksi['keterangan']; ?> - <?php echo $transaksi['jumlah']; ?></li>
-            <?php endforeach; ?>
-        <?php else: ?>
-            <li>Tidak ada data transaksi penarikan harian.</li>
-        <?php endif; ?>
-    </ul>
-</div>
-                </div>
-            </div>
-        </section>
-    </main>
-</body>
-</html>
+.navbar-center {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+}
 
-<!-- Modal for withdrawal -->
-    <div id="tarik-saldo-modal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn">&times;</span>
-            <h2>Tarik Saldo</h2>
-            <form id="tarik-saldo-form">
-                <label for="bank-account">Rekening Bank:</label>
-                <select id="bank-account" name="bank-account">
-                    <option value="bank1">Bank kocak</option>
-                    <option value="bank2">Bank anjir</option>
-                    <option value="bank3">Bank sampah</option>
-                </select>
-                <label for="jumlah-tarik">Jumlah yang Ditarik:</label>
-                <input type="number" id="jumlah-tarik" name="jumlah-tarik" required>
-                <button type="button" id="transfer-btn">Transfer</button>
-            </form>
-        </div>
-    </div>
+/* styles.css */
 
-    <!-- Modal for confirmation -->
-    <div id="konfirmasi-modal" class="modal">
-        <div class="modal-content">
-            <h2>Konfirmasi Penarikan</h2>
-            <p>Anda akan menarik saldo sejumlah <span id="jumlah-konfirmasi"></span> ke rekening <span id="rekening-konfirmasi"></span>. Apakah Anda yakin?</p>
-            <button id="konfirmasi-btn">Konfirmasi</button>
-            <button class="close-btn">Batal</button>
-        </div>
-    </div>
+.navbar-center a {
+    color: white;
+    text-decoration: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    transition: transform 0.3s;
+}
 
-    <!-- Modal untuk hasil penarikan -->
-    <div id="hasil-modal" class="modal">
-        <div class="modal-content">
-            <h2>Hasil Penarikan</h2>
-            <p id="hasil-pesan"></p>
-            <button class="close-btn">Tutup</button>
-        </div>
-    </div>
+.navbar-center a:hover {
+    transform: scale(1.1);
+}
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="dashmer.js"></script>
-</body>
-</html>
+.navbar-right {
+    display: flex;
+    align-items: center;
+}
+
+.navbar-right .profile-info,
+.navbar-right .saldo-info,
+.navbar-right .saldo-akhir-info {
+    margin-left: 20px;
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+}
+
+.navbar-right .profile-info i,
+.navbar-right .saldo-info i,
+.navbar-right .saldo-akhir-info i {
+    margin-right: 8px;
+}
+
+.main-content {
+    padding: 20px;
+}
+
+.profile-section,
+.transaksi-section {
+    background-color: white;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.profile-section h2,
+.transaksi-section h2 {
+    color: #004d40;
+}
+
+.saldo-section {
+    margin-top: 10px;
+}
+
+.saldo-section h3 {
+    color: #004d40;
+}
+
+#tarik-saldo-btn {
+    background-color: #004d40;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.3s;
+}
+
+#tarik-saldo-btn:hover {
+    background-color: #00332c;
+    transform: scale(1.05);
+}
+
+.date-filter {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.date-filter label {
+    margin-right: 10px;
+    color: #004d40;
+}
+
+.date-filter input,
+.date-filter button {
+    margin-right: 10px;
+    padding: 5px;
+    border: 1px solid #004d40;
+    border-radius: 5px;
+}
+
+.date-filter button {
+    background-color: #004d40;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.3s;
+}
+
+.date-filter button:hover {
+    background-color: #00332c;
+    transform: scale(1.05);
+}
+
+.statistik-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+.statistik-container > div {
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* Konten Modal */
+.modal-content {
+    background-color: #fefefe;
+    margin: 10% auto;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    width: 70%;
+    height: 60%;
+}
+
+/* Tombol Tutup */
+.close-btn {
+    color: #aaa;
+    font-size: 24px;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    cursor: pointer;
+}
+
+.close-btn:hover {
+    color: black;
+}
+
+/* Tombol Transfer */
+#transfer-btn {
+    background-color: #004d40;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: background-color 0.3s, transform 0.3s;
+}
+
+#transfer-btn:hover {
+    background-color: #00332c;
+    transform: scale(1.05);
+}
+
+/* styles.css */
+
+/* Tombol Konfirmasi */
+#konfirmasi-btn {
+    background-color: #004d40;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 20px;
+    height: 10%;
+    transition: background-color 0.3s, transform 0.3s;
+}
+
+#konfirmasi-btn:hover {
+    background-color: #1b9721;
+    transform: scale(1.05);
+}
+
+/* Tombol Tutup pada Modal */
+.modal-content .close-btn {
+    background-color: #d8180b;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: background-color 0.3s, transform 0.3s;
+}
+
+.modal-content .close-btn:hover {
+    background-color: #df1111;
+    transform: scale(1.05);
+}
+
+/* Input dan Label */
+label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+input[type="number"],
+select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+
+/* Responsif untuk tablet */
+@media screen and (max-width: 768px) {
+    .modal-content {
+        width: 70%;
+    }
+}
+
+/* Responsif untuk ponsel */
+@media screen and (max-width: 480px) {
+    .modal-content {
+        width: 80%;
+        padding: 15px;
+    }
+}
+
+.statistik-container {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+}
+
+.statistik-container > div {
+    width: 45%;
+    margin: 20px 0;
+}
+
+canvas {
+    width: 100%;
+    height: auto;
+}
