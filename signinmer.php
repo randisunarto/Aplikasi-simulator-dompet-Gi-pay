@@ -1,28 +1,38 @@
 <?php
 session_start();
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // Ambil input dari form
+include 'config.php'; // Include database connection
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = $_POST['username'];
     $password = $_POST['password'];
 
-    // Contoh validasi (seharusnya memeriksa database atau sistem autentikasi lainnya)
-    if ($username === 'user' && $password === 'pass') {
-        $_SESSION['full_name'] = 'Nama Pengguna'; // Set nilai sebenarnya dari login
-        $_SESSION['store_name'] = 'Nama Toko';
-        $_SESSION['phone_number'] = '1234567890';
-        $_SESSION['email'] = 'email@example.com';
-        header('Location: dashmer.php');
-        exit();
+    // Fetch user data from the database
+    $query = $pdo->prepare("SELECT * FROM users WHERE username = :username");
+    $query->execute(['username' => $username]);
+    $user = $query->fetch(PDO::FETCH_ASSOC);
+
+    // Debugging: Check if user is fetched correctly
+    if ($user) {
+        // Debugging: Verify fetched password
+        if ($password === $user['password']) { // Membandingkan password plaintext
+            // Set session and redirect
+            $_SESSION['username'] = $username;
+            header('Location: dashuser.php');
+            exit;
+        } else {
+            $error = 'Password salah!';
+        }
     } else {
-        $error = 'Nama pengguna atau kata sandi salah!';
+        $error = 'Username tidak ditemukan!';
     }
 }
 ?>
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Glassmorphism Login Form Tutorial in HTML CSS</title>
   <link rel="preconnect" href="https://fonts.gstatic.com">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
@@ -160,16 +170,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <div class="shape"></div>
     <div class="shape"></div>
   </div>
-  <form method="POST" action="signinmer.php">
-    <h3>Merchant Sign In</h3>
+  <form method="POST" action="">
+    <h3>User Sign In</h3> 
+
+    <?php if (isset($error)) { echo '<p style="color: red; text-align: center;">' . htmlspecialchars($error) . '</p>'; } ?>
 
     <label for="username">Username</label>
-    <input type="text" placeholder="Email or Phone" id="username" name="username" required>
+    <input type="text" placeholder="Username" id="username" name="username" required>
 
     <label for="password">Password</label>
     <input type="password" placeholder="Password" id="password" name="password" required>
 
-     <button type="submit" formaction="dashmer.php">Sign In</button>
+    <button type="submit">Sign In</button>
     <div class="social">
       <div class="go">
         <a href="index.php">Sign up User</a>
@@ -178,7 +190,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <a href="merchant.php">Sign up Merchant</a>
       </div>
     </div>
-    <?php if (isset($error)) { echo '<p style="color:red;">' . htmlspecialchars($error) . '</p>'; } ?>
   </form>
 </body>
 </html>
