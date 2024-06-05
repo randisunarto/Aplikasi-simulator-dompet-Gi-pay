@@ -1,141 +1,136 @@
 <?php
-require_once 'config.php';
+// Fungsi untuk menyambungkan ke database
+function getDatabaseConnection() {
+    $servername = "localhost";
+    $username = "root";
+    $password = "";
+    $dbname = "e_money"; // Ganti dengan nama database Anda
 
-// Function to add user to database
-function addUserToDatabase($username, $password, $fullName, $phoneNumber, $email) {
-    global $conn;
-    try {
-        // Periksa apakah username sudah ada
-        $stmt = $conn->prepare("SELECT * FROM users WHERE username = ?");
-        $stmt->bind_param("s", $username);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        if ($result->num_rows > 0) {
-            throw new Exception("Username sudah ada. Silakan pilih username lain.");
-        }
-        
-        $password_hash = password_hash($password, PASSWORD_DEFAULT);
-        $stmt = $conn->prepare("INSERT INTO users (username, password, full_name, phone_number, email) VALUES (?, ?, ?, ?, ?)");
-        $stmt->bind_param("sssss", $username, $password_hash, $fullName, $phoneNumber, $email);
-        if ($stmt->execute()) {
-            echo "User berhasil ditambahkan ke database!";
-        } else {
-            throw new Exception("Gagal menambahkan user ke database.");
-        }
-    } catch (Exception $e) {
-        echo "Terjadi kesalahan: " . $e->getMessage();
+    // Membuat koneksi
+    $conn = new mysqli($servername, $username, $password, $dbname);
+
+    // Memeriksa koneksi
+    if ($conn->connect_error) {
+        die("Connection failed: " . $conn->connect_error);
     }
+
+    return $conn;
 }
 
-// Function to add merchant to database
-function addMerchantToDatabase($username, $password, $fullName, $storeName, $storeAddress, $phoneNumber, $email) {
-    global $conn;
-    try {
-        // Periksa apakah username sudah ada
-        $stmt = $conn->prepare("SELECT * FROM merchants WHERE username = ?");
-        $stmt->bind_param("s", $username);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        if ($result->num_rows > 0) {
-            throw new Exception("Username sudah ada. Silakan pilih username lain.");
-        }
-        
-        $password_hash = password_hash($password, PASSWORD_DEFAULT);
-        $stmt = $conn->prepare("INSERT INTO merchants (username, password, full_name, store_name, store_address, phone_number, email) VALUES (?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("sssssss", $username, $password_hash, $fullName, $storeName, $storeAddress, $phoneNumber, $email);
-        if ($stmt->execute()) {
-            echo "Merchant berhasil ditambahkan ke database!";
-        } else {
-            throw new Exception("Gagal menambahkan merchant ke database.");
-        }
-    } catch (Exception $e) {
-        echo "Terjadi kesalahan: " . $e->getMessage();
+// Fungsi untuk menambahkan pengguna ke database
+function addUserToDatabase($username, $password, $full_name, $phone_number, $email) {
+    $conn = getDatabaseConnection();
+
+    // Cek apakah username sudah ada
+    $stmt = $conn->prepare("SELECT COUNT(*) FROM users WHERE username = ?");
+    if ($stmt === false) {
+        error_log("Prepare failed: " . $conn->error);
+        echo "Error in SQL prepare: " . $conn->error;
+        $conn->close();
+        return;
     }
-}
 
-// Function to update user balance
-function updateUserBalance($userId, $amount) {
-    global $conn;
-    try {
-        $stmt = $conn->prepare("UPDATE users SET balance = balance + ? WHERE id = ?");
-        $stmt->bind_param("di", $amount, $userId);
-        if ($stmt->execute()) {
-            echo "Saldo pengguna berhasil diperbarui!";
-        } else {
-            throw new Exception("Gagal memperbarui saldo pengguna.");
-        }
-    } catch (Exception $e) {
-        echo "Terjadi kesalahan: " . $e->getMessage();
+    $stmt->bind_param("s", $username);
+    $stmt->execute();
+    $stmt->bind_result($count);
+    $stmt->fetch();
+    $stmt->close();
+
+    if ($count > 0) {
+        echo "Error: Username sudah ada.";
+        $conn->close();
+        return;
     }
+
+    // Tidak menggunakan hashing
+    $stmt = $conn->prepare("INSERT INTO users (username, password, full_name, phone_number, email) VALUES (?, ?, ?, ?, ?)");
+    if ($stmt === false) {
+        error_log("Prepare failed: " . $conn->error);
+        echo "Error in SQL prepare: " . $conn->error;
+        $conn->close();
+        return;
+    }
+
+    $stmt->bind_param("sssss", $username, $password, $full_name, $phone_number, $email);
+    $stmt->execute();
+    if ($stmt->affected_rows > 0) {
+        echo "User successfully added!";
+    } else {
+        echo "Error adding user: " . $stmt->error;
+    }
+    $stmt->close();
+    $conn->close();
 }
 
-// Function to update virtual account balance
-function updateVirtualAccountBalance($virtualAccountId, $amount) {
-    global $conn;
-    $query = "UPDATE virtual_accounts SET balance = balance + $amount WHERE id = $virtualAccountId";
-    return $conn->query($query);
+
+// Fungsi untuk menambahkan pedagang ke database
+function addMerchantToDatabase($full_name, $password, $store_name, $phone_number, $email) {
+    $conn = getDatabaseConnection();
+
+    // Cek apakah email sudah ada
+    $stmt = $conn->prepare("SELECT COUNT(*) FROM merchants WHERE email = ?");
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $stmt->bind_result($count);
+    $stmt->fetch();
+    $stmt->close();
+
+    if ($count > 0) {
+        echo "Error: Email sudah ada.";
+        $conn->close();
+        return;
+    }
+
+    // Tidak menggunakan hashing
+    $stmt = $conn->prepare("INSERT INTO merchants (full_name, password, store_name, phone_number, email) VALUES (?, ?, ?, ?, ?)");
+    $stmt->bind_param("sssss", $full_name, $password, $store_name, $phone_number, $email);
+    $stmt->execute();
+    $stmt->close();
+    $conn->close();
 }
 
-// Function to update merchant balance
-function updateMerchantBalance($merchantId, $amount) {
-    global $conn;
-    $query = "UPDATE merchants SET balance = balance + $amount WHERE id = $merchantId";
-    return $conn->query($query);
+
+// Fungsi untuk memperbarui saldo pengguna
+function updateUserBalance($user_id, $amount) {
+    $conn = getDatabaseConnection();
+    $stmt = $conn->prepare("UPDATE users SET balance = balance + ? WHERE id = ?");
+    $stmt->bind_param("di", $amount, $user_id);
+    $stmt->execute();
+    $stmt->close();
+    $conn->close();
 }
 
-// Function to add transaction to history
-function addTransactionHistory($userId, $merchantId, $amount) {
-    global $conn;
-    $query = "INSERT INTO transactions (user_id, merchant_id, amount) VALUES ($userId, $merchantId, $amount)";
-    return $conn->query($query);
+// Fungsi untuk mentransfer dana ke rekening bank
+function transferToBankAccount($bank_account_data, $amount) {
+    // Simulasikan transfer dana ke rekening bank
+    // Di dunia nyata, Anda akan memanggil API bank atau gateway pembayaran di sini
+
+    // Misalkan transfer berhasil, kita catat transaksi di database
+    $conn = getDatabaseConnection();
+    $stmt = $conn->prepare("INSERT INTO transactions (bank_account_data, amount, status) VALUES (?, ?, 'completed')");
+    $stmt->bind_param("sd", $bank_account_data, $amount);
+    $stmt->execute();
+    $stmt->close();
+    $conn->close();
 }
 
-// Function to retrieve transaction history
-function getTransactionHistory($userId) {
-    global $conn;
-    $query = "SELECT * FROM transactions WHERE user_id = $userId";
-    return $conn->query($query);
+// Fungsi untuk memperbarui status pengguna
+function updateUserStatus($user_id, $status) {
+    $conn = getDatabaseConnection();
+    $stmt = $conn->prepare("UPDATE users SET status = ? WHERE id = ?");
+    $stmt->bind_param("si", $status, $user_id);
+    $stmt->execute();
+    $stmt->close();
+    $conn->close();
 }
 
-// Function to retrieve merchant balance
-function getMerchantBalance($merchantId) {
-    global $conn;
-    $query = "SELECT balance FROM merchants WHERE id = $merchantId";
-    $result = $conn->query($query);
-    return $result->fetch_assoc()['balance'];
-}
-
-// Function to transfer funds to bank account
-function transferToBankAccount($bankAccountData, $amount) {
-    // Implement bank transfer logic here
-}
-
-// Function to retrieve payment statistics
-function getPaymentStatistics($merchantId, $startDate, $endDate) {
-    global $conn;
-    $query = "SELECT SUM(amount) AS total FROM transactions WHERE merchant_id = $merchantId AND date BETWEEN '$startDate' AND '$endDate'";
-    $result = $conn->query($query);
-    return $result->fetch_assoc()['total'];
-}
-
-// Function to retrieve withdrawal statistics
-function getWithdrawalStatistics($merchantId, $startDate, $endDate) {
-    // Implement withdrawal statistics logic here
-}
-
-// Function to update user status
-function updateUserStatus($userId, $status) {
-    global $conn;
-    $query = "UPDATE users SET status = '$status' WHERE id = $userId";
-    return $conn->query($query);
-}
-
-// Function to update merchant status
-function updateMerchantStatus($merchantId, $status) {
-    global $conn;
-    $query = "UPDATE merchants SET status = '$status' WHERE id = $merchantId";
-    return $conn->query($query);
+// Fungsi untuk memperbarui status pedagang
+function updateMerchantStatus($merchant_id, $status) {
+    $conn = getDatabaseConnection();
+    $stmt = $conn->prepare("UPDATE merchants SET status = ? WHERE id = ?");
+    $stmt->bind_param("si", $status, $merchant_id);
+    $stmt->execute();
+    $stmt->close();
+    $conn->close();
 }
 ?>
