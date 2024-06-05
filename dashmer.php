@@ -14,29 +14,108 @@ $query->execute(['email' => $email]);
 $merchant = $query->fetch();
 
 if (!$merchant) {
-    // Jika data merchant tidak ditemukan
     echo "Merchant tidak ditemukan.";
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = $_POST['action'];
+    $email = $_SESSION['email']; // Assuming the email is stored in the session
+
+    // Fetch merchant data
+    $query = $pdo->prepare("SELECT * FROM merchants WHERE email = :email");
+    $query->execute(['email' => $email]);
+    $merchant = $query->fetch();
+
+    switch ($action) {
+        case 'withdraw':
+            $withdrawAmount = intval($_POST['amount']);
+            $bankAccount = $_POST['bank-account'];
+
+            // Check if balance is sufficient
+            if ($merchant['balance'] >= $withdrawAmount) {
+                // Deduct merchant balance
+                $newMerchantBalance = $merchant['balance'] - $withdrawAmount;
+
+                // Update merchant balance
+                $query = $pdo->prepare("UPDATE merchants SET balance = :balance WHERE email = :email");
+                $query->execute(['balance' => $newMerchantBalance, 'email' => $email]);
+
+                // Save withdrawal in transaksi_penarikan
+                $query = $pdo->prepare("INSERT INTO transaksi_penarikan (tanggal, keterangan, jumlah) VALUES (NOW(), :keterangan, :jumlah)");
+                $query->execute(['keterangan' => "Withdrawal to " . $bankAccount, 'jumlah' => $withdrawAmount]);
+
+                echo json_encode(['status' => 'success', 'balance' => $newMerchantBalance]);
+            } else {
+                echo json_encode(['status' => 'error', 'message' => 'Saldo tidak cukup']);
+            }
+            exit;
+    }
+}
     exit;
 }
 ?>
 
+ 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Dashboard Toko</title>
-    <link rel="stylesheet" href="dashm.css">
-    <button id="logout-btn">Logout</button>
+    <link rel="stylesheet" href="dashmer.css">
+    <style>
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #004d40;
+            font-size: larger;
+            padding: 10px 20px;
+            font-weight: bolder
+        }
+        .navbar button {
+            background-color: #f44336;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .navbar button:hover {
+            background-color: #d32f2f;
+        }
+        .main-content {
+            padding: 20px;
+        }
+        .profile-section, .transaksi-section {
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar">
-        <!-- Konten navbar di sini -->
+        <span>Dashboard Merchant</span>
+        <button id="logout-btn">Logout</button>
     </nav>
     <main class="main-content">
         <section id="profile" class="profile-section">
-            <h2>Profil Toko</h2>
-            <p>Nama: <?php echo htmlspecialchars($merchant['store_name']); ?></p>
-            <p>ID Toko: <?php echo htmlspecialchars($merchant['id']); ?></p>
+            <h2>Profil Merchant</h2>
+            <h3>Nama: <?php echo htmlspecialchars($merchant['store_name']); ?></h3>
+            <h3>ID Toko: <?php echo htmlspecialchars($merchant['id']); ?></h3>
             <div class="saldo-section">
                 <h3>Saldo Toko: Rp. <?php echo number_format($merchant['balance'], 2, ',', '.'); ?></h3>
                 <button id="tarik-saldo-btn">Tarik Saldo</button>
@@ -52,43 +131,67 @@ if (!$merchant) {
                 <button id="filter-btn">Filter</button>
             </div>
             <div class="statistik-container">
-                <!-- Bagian Statistik Pembayaran Harian -->
-<div id="transaksi_pembayaran">
-    <h3>Transaksi Pembayaran Harian</h3>
-    <canvas id="paymentChart"></canvas>
-    <ul>
-        <?php if(isset($transaksi_pembayaran)): ?>
-            <?php foreach ($transaksi_pembayaran as $transaksi): ?>
-                <li><?php echo $transaksi['keterangan']; ?> - <?php echo $transaksi['jumlah']; ?></li>
-            <?php endforeach; ?>
-        <?php else: ?>
-            <li>Tidak ada data transaksi pembayaran harian.</li>
-        <?php endif; ?>
-    </ul>
-</div>
-
-<!-- Bagian Statistik Penarikan Harian -->
-<div id="transaksi_penarikan">
-    <h3>Transaksi Penarikan Harian</h3>
-    <canvas id="withdrawalChart"></canvas>
-    <ul>
-        <?php if(isset($transaksi_penarikan)): ?>
-            <?php foreach ($transaksi_penarikan as $transaksi): ?>
-                <li><?php echo $transaksi['keterangan']; ?> - <?php echo $transaksi['jumlah']; ?></li>
-            <?php endforeach; ?>
-        <?php else: ?>
-            <li>Tidak ada data transaksi penarikan harian.</li>
-        <?php endif; ?>
-    </ul>
-</div>
+                <div id="transaksi_pembayaran">
+                    <h3>Transaksi Pembayaran Harian</h3>
+                    <canvas id="paymentChart"></canvas>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Tanggal & Jam</th>
+                                <th>Keterangan</th>
+                                <th>Jumlah</th>
+                                <th>Sumber</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if(isset($transaksi_pembayaran)): ?>
+                                <?php foreach ($transaksi_pembayaran as $transaksi): ?>
+                                    <tr>
+                                        <td><?php echo $transaksi['tanggal']; ?></td>
+                                        <td><?php echo $transaksi['keterangan']; ?></td>
+                                        <td>Rp. <?php echo number_format($transaksi['jumlah'], 2, ',', '.'); ?></td>
+                                        <td><?php echo $transaksi['sumber']; ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <tr><td colspan="4">Tidak ada data transaksi pembayaran harian.</td></tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="transaksi_penarikan">
+                    <h3>Transaksi Penarikan Harian</h3>
+                    <canvas id="withdrawalChart"></canvas>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Tanggal & Jam</th>
+                                <th>Keterangan</th>
+                                <th>Jumlah</th>
+                                <th>Tujuan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if(isset($transaksi_penarikan)): ?>
+                                <?php foreach ($transaksi_penarikan as $transaksi): ?>
+                                    <tr>
+                                        <td><?php echo $transaksi['tanggal']; ?></td>
+                                        <td><?php echo $transaksi['keterangan']; ?></td>
+                                        <td>Rp. <?php echo number_format($transaksi['jumlah'], 2, ',', '.'); ?></td>
+                                        <td><?php echo $transaksi['tujuan']; ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <tr><td colspan="4">Tidak ada data transaksi penarikan harian.</td></tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </section>
     </main>
-</body>
-</html>
 
-<!-- Modal for withdrawal -->
+    <!-- Modal for withdrawal -->
     <div id="tarik-saldo-modal" class="modal">
         <div class="modal-content">
             <span class="close-btn">&times;</span>
