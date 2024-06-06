@@ -1,39 +1,241 @@
-CREATE DATABASE IF NOT EXISTS e_money;
+-- phpMyAdmin SQL Dump
+-- version 5.2.1
+-- https://www.phpmyadmin.net/
+--
+-- Host: 127.0.0.1
+-- Waktu pembuatan: 06 Jun 2024 pada 03.57
+-- Versi server: 10.4.32-MariaDB
+-- Versi PHP: 8.2.12
 
-USE e_money;
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+START TRANSACTION;
+SET time_zone = "+00:00";
 
-CREATE TABLE IF NOT EXISTS users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(50) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL,
-    full_name VARCHAR(100) NOT NULL,
-    phone_number VARCHAR(15) NOT NULL,
-    email VARCHAR(100) NOT NULL UNIQUE,
-    balance DECIMAL(10, 2));
 
-CREATE TABLE IF NOT EXISTS merchants (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(50) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL,
-    full_name VARCHAR(100) NOT NULL,
-    store_name VARCHAR(100) NOT NULL,
-    store_address VARCHAR(255) NOT NULL,
-    phone_number VARCHAR(15) NOT NULL,
-    email VARCHAR(100) NOT NULL UNIQUE,
-    balance DECIMAL(10, 2));
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
 
-CREATE TABLE IF NOT EXISTS transactions (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT,
-    merchant_id INT,
-    amount DECIMAL(10, 2) NOT NULL,
-    date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (merchant_id) REFERENCES merchants(id)
-);
+--
+-- Database: `e_money`
+--
 
-CREATE TABLE IF NOT EXISTS virtual_accounts (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT,
-    balance DECIMAL(10, 2) DEFAULT 0,
-    FOREIGN KEY (user_id));
+-- --------------------------------------------------------
+
+--
+-- Struktur dari tabel `merchants`
+--
+
+CREATE TABLE `merchants` (
+  `id` int(11) NOT NULL,
+  `full_name` varchar(50) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `store_name` varchar(100) NOT NULL,
+  `phone_number` varchar(15) NOT NULL,
+  `email` varchar(100) NOT NULL,
+  `balance` decimal(10,2) DEFAULT 0.00,
+  `status` enum('active','blocked') DEFAULT 'active'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data untuk tabel `merchants`
+--
+
+INSERT INTO `merchants` (`id`, `full_name`, `password`, `store_name`, `phone_number`, `email`, `balance`, `status`) VALUES
+(6, 'ija', 'ija123', 'ija store', '12345678', 'ija@gmail.com', 100000.00, 'active'),
+(7, 'randi', 'randis', 'randi store', '12345678', 'randi@gmail.com', 0.00, 'active');
+
+-- --------------------------------------------------------
+
+--
+-- Struktur dari tabel `setting`
+--
+
+CREATE TABLE `setting` (
+  `discount_percentage` float DEFAULT 0,
+  `discount_start_date` date DEFAULT NULL,
+  `id` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Struktur dari tabel `transaction_history`
+--
+
+CREATE TABLE `transaction_history` (
+  `id` int(11) NOT NULL,
+  `username` varchar(255) NOT NULL,
+  `type` enum('topup','payment') NOT NULL,
+  `amount` decimal(10,2) NOT NULL,
+  `timestamp` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data untuk tabel `transaction_history`
+--
+
+INSERT INTO `transaction_history` (`id`, `username`, `type`, `amount`, `timestamp`) VALUES
+(1, 'randis', 'payment', 100000.00, '2024-06-05 02:50:51'),
+(2, 'randis', 'topup', 1000.00, '2024-06-05 02:51:08'),
+(3, 'randis', 'payment', 10000.00, '2024-06-05 13:01:58'),
+(4, 'randis', 'payment', 10000.00, '2024-06-05 13:27:20'),
+(5, 'randis', 'topup', 90000.00, '2024-06-05 15:46:15'),
+(6, 'randis', 'payment', 90000.00, '2024-06-05 15:46:34'),
+(7, 'randis', 'payment', 2000.00, '2024-06-05 16:11:33'),
+(8, 'randis', 'payment', 2000.00, '2024-06-05 16:11:46'),
+(9, 'randis', 'payment', 2000.00, '2024-06-05 16:11:46'),
+(10, 'randis', 'payment', 2000.00, '2024-06-05 16:11:46'),
+(11, 'randis', 'payment', 2000.00, '2024-06-05 16:12:10'),
+(12, 'randis', 'payment', 2000.00, '2024-06-05 16:12:10'),
+(13, 'randis', 'payment', 2000.00, '2024-06-05 16:12:10');
+
+-- --------------------------------------------------------
+
+--
+-- Struktur dari tabel `transaksi_pembayaran`
+--
+
+CREATE TABLE `transaksi_pembayaran` (
+  `id` int(11) NOT NULL,
+  `tanggal` date DEFAULT NULL,
+  `keterangan` varchar(255) DEFAULT NULL,
+  `jumlah` decimal(10,2) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data untuk tabel `transaksi_pembayaran`
+--
+
+INSERT INTO `transaksi_pembayaran` (`id`, `tanggal`, `keterangan`, `jumlah`) VALUES
+(1, '2024-06-06', 'Payment to ija store', 10000.00),
+(2, '2024-06-06', 'Payment to ija store', 5000.00);
+
+-- --------------------------------------------------------
+
+--
+-- Struktur dari tabel `transaksi_penarikan`
+--
+
+CREATE TABLE `transaksi_penarikan` (
+  `id` int(11) NOT NULL,
+  `tanggal` date DEFAULT NULL,
+  `keterangan` varchar(255) DEFAULT NULL,
+  `jumlah` decimal(10,2) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Struktur dari tabel `users`
+--
+
+CREATE TABLE `users` (
+  `id` int(11) NOT NULL,
+  `username` varchar(50) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `full_name` varchar(100) NOT NULL,
+  `phone_number` int(11) NOT NULL,
+  `email` varchar(100) DEFAULT NULL,
+  `balance` decimal(10,2) DEFAULT 0.00,
+  `status` enum('active','blocked') DEFAULT 'active',
+  `is_blocked` tinyint(1) DEFAULT 0,
+  `role` enum('public','shop_owner') NOT NULL DEFAULT 'public'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data untuk tabel `users`
+--
+
+INSERT INTO `users` (`id`, `username`, `password`, `full_name`, `phone_number`, `email`, `balance`, `status`, `is_blocked`, `role`) VALUES
+(6, 'randis', 'randis', 'randi sunarto', 987654, 'rndi@gmail.com', 99750000.00, 'active', 0, 'public');
+
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indeks untuk tabel `merchants`
+--
+ALTER TABLE `merchants`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `username` (`full_name`),
+  ADD UNIQUE KEY `email` (`email`);
+
+--
+-- Indeks untuk tabel `setting`
+--
+ALTER TABLE `setting`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indeks untuk tabel `transaction_history`
+--
+ALTER TABLE `transaction_history`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indeks untuk tabel `transaksi_pembayaran`
+--
+ALTER TABLE `transaksi_pembayaran`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indeks untuk tabel `transaksi_penarikan`
+--
+ALTER TABLE `transaksi_penarikan`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indeks untuk tabel `users`
+--
+ALTER TABLE `users`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `username` (`username`),
+  ADD UNIQUE KEY `email` (`email`);
+
+--
+-- AUTO_INCREMENT untuk tabel yang dibuang
+--
+
+--
+-- AUTO_INCREMENT untuk tabel `merchants`
+--
+ALTER TABLE `merchants`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+
+--
+-- AUTO_INCREMENT untuk tabel `setting`
+--
+ALTER TABLE `setting`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT untuk tabel `transaction_history`
+--
+ALTER TABLE `transaction_history`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+
+--
+-- AUTO_INCREMENT untuk tabel `transaksi_pembayaran`
+--
+ALTER TABLE `transaksi_pembayaran`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
+-- AUTO_INCREMENT untuk tabel `transaksi_penarikan`
+--
+ALTER TABLE `transaksi_penarikan`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT untuk tabel `users`
+--
+ALTER TABLE `users`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+COMMIT;
+
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
