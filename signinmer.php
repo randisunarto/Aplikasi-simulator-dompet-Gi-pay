@@ -2,32 +2,31 @@
 session_start();
 include 'config.php'; // Include database connection
 
+$error = '';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = $_POST['username'];
+    $email = $_POST['email'];
     $password = $_POST['password'];
 
-    // Fetch user data from the database
-    $query = $pdo->prepare("SELECT * FROM users WHERE username = :username");
-    $query->execute(['username' => $username]);
-    $user = $query->fetch(PDO::FETCH_ASSOC);
+    // Fetch merchant data from the database
+    $query = $pdo->prepare("SELECT * FROM merchants WHERE email = :email");
+    $query->execute(['email' => $email]);
+    $merchant = $query->fetch(PDO::FETCH_ASSOC);
 
-    // Debugging: Check if user is fetched correctly
-    if ($user) {
-        // Debugging: Verify fetched password
-        if ($password === $user['password']) { // Membandingkan password plaintext
+    if ($merchant) {
+        if ($password === $merchant['password']) { // Membandingkan password plaintext
             // Set session and redirect
-            $_SESSION['username'] = $username;
-            header('Location: dashuser.php');
+            $_SESSION['email'] = $email;
+            header('Location: dashmer.php');
             exit;
         } else {
             $error = 'Password salah!';
         }
     } else {
-        $error = 'Username tidak ditemukan!';
+        $error = 'Email tidak ditemukan!';
     }
 }
 ?>
-
 
 <!DOCTYPE html>
 <html lang="en">
@@ -66,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     form {
-      height: 520px;
+      height: 570px;
       width: 400px;
       background-color: rgba(255, 255, 255, 0.13);
       position: absolute;
@@ -144,6 +143,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       color: #eaf0fb;
       display: flex;
       justify-content: center;
+      align-items: center;
       text-align: center;
       cursor: pointer;
     }
@@ -163,6 +163,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       width: 100%;
       height: 100%;
     }
+
+    .error {
+      color: red;
+      margin-top: 20px;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -171,12 +177,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="shape"></div>
   </div>
   <form method="POST" action="">
-    <h3>User Sign In</h3> 
+    <h3>Merchant Sign In</h3>
 
-    <?php if (isset($error)) { echo '<p style="color: red; text-align: center;">' . htmlspecialchars($error) . '</p>'; } ?>
+    <?php if ($error): ?>
+      <div class="error"><?php echo htmlspecialchars($error); ?></div>
+    <?php endif; ?>
 
-    <label for="username">Username</label>
-    <input type="text" placeholder="Username" id="username" name="username" required>
+    <label for="email">Email</label>
+    <input type="email" placeholder="Email" id="email" name="email" required>
 
     <label for="password">Password</label>
     <input type="password" placeholder="Password" id="password" name="password" required>
